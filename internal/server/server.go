@@ -19,8 +19,9 @@ type CreateCommand func(*Server) (command.SlashCommand, error)
 type GameServer = map[string]string
 
 type MasterServer struct {
-	GameId   string `json:"gameId"`
-	Endpoint string `json:"endpoint"`
+	GameId      string `json:"gameId"`
+	GameVersion string `json:"gameVersion"`
+	Endpoint    string `json:"endpoint"`
 }
 
 // Server is the config and main server

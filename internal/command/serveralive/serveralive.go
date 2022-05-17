@@ -16,11 +16,17 @@ import (
 type serverlistHandler struct {
 	session *session.Session
 	server  *server.Server
+	notify  chan Notification
+}
+
+type Notification struct {
+	event   *gateway.InteractionCreateEvent
+	options map[string]discord.CommandInteractionOption
 }
 
 // CreateCommand creates a SlashCommand which handles /serveralive
 func CreateCommand(srv *server.Server) (cmd command.SlashCommand, err error) {
-	sh := serverlistHandler{session: srv.Session, server: srv}
+	sh := serverlistHandler{session: srv.Session, server: srv, notify: make(chan Notification)}
 
 	cmd = command.SlashCommand{
 		HandleInteraction: sh.handleInteraction,
@@ -42,7 +48,38 @@ func CreateCommand(srv *server.Server) (cmd command.SlashCommand, err error) {
 		},
 	}
 
+	go sh.sendMessage()
 	return
+}
+
+func (sh *serverlistHandler) sendMessage() {
+	for {
+		select {
+		case n := <-sh.notify:
+			var servers []server.GameServer
+			for _, v := range sh.server.GameServers {
+				servers = append(servers, v...)
+			}
+
+			if val, present := n.options["filter"]; present {
+				servers = filter(servers, val.String())
+			}
+
+			desc := stringformat.DesktopList(servers)
+			if val, present := n.options["mobile"]; present {
+				mobile, err := val.BoolValue()
+				if err != nil {
+					mobile = false
+				}
+				if mobile {
+					desc = stringformat.MobileList(servers)
+				}
+			}
+			for _, m := range desc {
+				sh.session.SendMessage(n.event.ChannelID, m)
+			}
+		}
+	}
 }
 
 func filter(list []server.GameServer, filterString string) []server.GameServer {
@@ -62,28 +99,9 @@ func (sh *serverlistHandler) handleInteraction(
 ) (
 	response *api.InteractionResponseData, err error,
 ) {
-
-	var servers []server.GameServer
-	for _, v := range sh.server.GameServers {
-		servers = append(servers, v...)
-	}
-
-	if val, present := options["filter"]; present {
-		servers = filter(servers, val.String())
-	}
-
-	desc := stringformat.DesktopList(servers)
-	if val, present := options["mobile"]; present {
-		mobile, err := val.BoolValue()
-		if err != nil {
-			mobile = false
-		}
-		if mobile {
-			desc = stringformat.MobileList(servers)
-		}
-	}
+	sh.notify <- Notification{event, options}
 	response = &api.InteractionResponseData{
-		Content: option.NewNullableString(desc),
+		Content: option.NewNullableString("sending filtered server list, please wait..."),
 	}
 	return
 }

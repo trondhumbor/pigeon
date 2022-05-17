@@ -17,8 +17,8 @@ var (
 	colorRegex = regexp.MustCompile(`\^[\d:;]`)
 )
 
-func GetMasterServerResponse(masterServer string, gameId string) []string {
-	masterResponse, err := sendMessage(masterServer, fmt.Sprintf("getservers %s 1 full empty", gameId), true)
+func GetMasterServerResponse(masterServer string, gameId string, gameVersion string) []string {
+	masterResponse, err := sendMessage(masterServer, fmt.Sprintf("getservers %s %s full empty", gameId, gameVersion), true)
 	if err != nil {
 		log.Println("couldn't get response from master server", err.Error())
 		return []string{}
