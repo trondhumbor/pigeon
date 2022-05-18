@@ -29,7 +29,7 @@ func (srv *Server) PopulateGameServers() {
 	}
 
 	query := func(master MasterServer) {
-		servers := query.GetMasterServerResponse(master.Endpoint, master.GameId, master.GameVersion)
+		servers := query.GetMasterServerResponse(master.Endpoint, master.GameId, master.Protocol)
 
 		for _, server := range servers {
 			go querySingleServer(server, master.GameId)
