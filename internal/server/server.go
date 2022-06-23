@@ -31,6 +31,9 @@ type Server struct {
 	GuildID       discord.GuildID `json:"guildID"`
 	MasterServers []MasterServer  `json:"masterServers"`
 
+	Mapnames  map[string]string `json:"mapNames,omitempty"`
+	Gametypes map[string]string `json:"gameTypes,omitempty"`
+
 	commands map[string]command.SlashCommand
 
 	Session               *session.Session

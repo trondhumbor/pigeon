@@ -14,9 +14,10 @@ import (
 )
 
 type serverlistHandler struct {
-	session *session.Session
-	server  *server.Server
-	notify  chan Notification
+	session   *session.Session
+	server    *server.Server
+	formatter stringformat.Formatter
+	notify    chan Notification
 }
 
 type Notification struct {
@@ -26,7 +27,7 @@ type Notification struct {
 
 // CreateCommand creates a SlashCommand which handles /serveralive
 func CreateCommand(srv *server.Server) (cmd command.SlashCommand, err error) {
-	sh := serverlistHandler{session: srv.Session, server: srv, notify: make(chan Notification)}
+	sh := serverlistHandler{session: srv.Session, server: srv, formatter: stringformat.New(srv.Mapnames, srv.Gametypes), notify: make(chan Notification)}
 
 	cmd = command.SlashCommand{
 		HandleInteraction: sh.handleInteraction,
@@ -65,14 +66,14 @@ func (sh *serverlistHandler) sendMessage() {
 				servers = filter(servers, val.String())
 			}
 
-			desc := stringformat.DesktopList(servers)
+			desc := sh.formatter.DesktopList(servers)
 			if val, present := n.options["mobile"]; present {
 				mobile, err := val.BoolValue()
 				if err != nil {
 					mobile = false
 				}
 				if mobile {
-					desc = stringformat.MobileList(servers)
+					desc = sh.formatter.MobileList(servers)
 				}
 			}
 			for _, m := range desc {

@@ -29,7 +29,30 @@ func sanitizeFields(inServer server.GameServer) server.GameServer {
 	return sanitized
 }
 
-func DesktopList(servers []server.GameServer) []string {
+type Formatter struct {
+	mapnames  map[string]string
+	gametypes map[string]string
+}
+
+func New(mapnames, gametypes map[string]string) (f Formatter) {
+	return Formatter{mapnames: mapnames, gametypes: gametypes}
+}
+
+func (f *Formatter) MapnameLookup(key string) string {
+	if val, present := f.mapnames[key]; present {
+		return val
+	}
+	return "Unknown" // could potentially return the key here instead
+}
+
+func (f *Formatter) GametypeLookup(key string) string {
+	if val, present := f.gametypes[key]; present {
+		return val
+	}
+	return "Unknown" // could potentially return the key here instead
+}
+
+func (f *Formatter) DesktopList(servers []server.GameServer) []string {
 	var messages []string
 	desc := "```\n"
 	for _, s := range servers {
@@ -42,8 +65,8 @@ func DesktopList(servers []server.GameServer) []string {
 
 		s = sanitizeFields(s)
 		hostname := leftjust(s["hostname"], 37)
-		mapname := leftjust(s["mapname"], 17)
-		gametype := leftjust(s["gametype"], 10)
+		mapname := leftjust(f.MapnameLookup(s["mapname"]), 17)
+		gametype := leftjust(f.GametypeLookup(s["gametype"]), 10)
 		clients := leftjust(fmt.Sprintf("%s / %s", s["clients"], s["sv_maxclients"]), 7)
 		desc += fmt.Sprintf("| %s | %s | %s | %s |\n", hostname, mapname, gametype, clients)
 	}
@@ -52,7 +75,7 @@ func DesktopList(servers []server.GameServer) []string {
 	return messages
 }
 
-func MobileList(servers []server.GameServer) []string {
+func (f *Formatter) MobileList(servers []server.GameServer) []string {
 	var messages []string
 	desc := "```\n---------------------------------\n"
 	for _, s := range servers {
@@ -65,8 +88,8 @@ func MobileList(servers []server.GameServer) []string {
 
 		s = sanitizeFields(s)
 		hostname := fmt.Sprintf("|%s|%s|", leftjust("Hostname", 8), leftjust(s["hostname"], 22))
-		mapname := fmt.Sprintf("|%s|%s|", leftjust("Map", 8), leftjust(s["mapname"], 22))
-		gametype := fmt.Sprintf("|%s|%s|", leftjust("Gametype", 8), leftjust(s["gametype"], 22))
+		mapname := fmt.Sprintf("|%s|%s|", leftjust("Map", 8), leftjust(f.MapnameLookup(s["mapname"]), 22))
+		gametype := fmt.Sprintf("|%s|%s|", leftjust("Gametype", 8), leftjust(f.GametypeLookup(s["gametype"]), 22))
 		clients := fmt.Sprintf("|%s|%s|", leftjust("Clients", 8), leftjust(fmt.Sprintf("%s / %s", s["clients"], s["sv_maxclients"]), 22))
 		desc += fmt.Sprintf("%s\n%s\n%s\n%s\n", hostname, mapname, gametype, clients)
 		desc += "---------------------------------\n"
