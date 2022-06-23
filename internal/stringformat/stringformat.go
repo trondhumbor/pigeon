@@ -21,10 +21,10 @@ func leftjust(s string, n int) string {
 
 func sanitizeFields(inServer server.GameServer) server.GameServer {
 	sanitized := make(server.GameServer)
-	re := regexp.MustCompile(`(?i)discord.gg`) // remove discord links that discord tries to parse
+	re := regexp.MustCompile(`(?i)^https?:\/\/`) // remove links that discord tries to parse
 	for k, v := range inServer {
 		sanitized[k] = strings.ReplaceAll(v, "`", "")
-		sanitized[k] = re.ReplaceAllString(v, "discord gg")
+		sanitized[k] = re.ReplaceAllString(v, "hxxp://")
 	}
 	return sanitized
 }
@@ -41,8 +41,8 @@ func DesktopList(servers []server.GameServer) []string {
 		}
 
 		s = sanitizeFields(s)
-		hostname := leftjust(s["hostname"], 40)
-		mapname := leftjust(s["mapname"], 20)
+		hostname := leftjust(s["hostname"], 37)
+		mapname := leftjust(s["mapname"], 17)
 		gametype := leftjust(s["gametype"], 10)
 		clients := leftjust(fmt.Sprintf("%s / %s", s["clients"], s["sv_maxclients"]), 7)
 		desc += fmt.Sprintf("| %s | %s | %s | %s |\n", hostname, mapname, gametype, clients)

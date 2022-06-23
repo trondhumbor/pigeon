@@ -37,10 +37,10 @@ func (srv *Server) PopulateGameServers() {
 	}
 
 	populate := func() {
-		// create the initial arrays
+		// create the initial slices
 		for _, m := range srv.MasterServers {
 			srv.gameServersWriteMutex.Lock()
-			srv.GameServers[m.GameId] = make([]GameServer, 0)
+			srv.GameServers[m.GameId] = []GameServer{}
 			srv.gameServersWriteMutex.Unlock()
 		}
 
