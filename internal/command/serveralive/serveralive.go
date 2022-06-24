@@ -13,21 +13,15 @@ import (
 	"github.com/trondhumbor/pigeon/internal/stringformat"
 )
 
-type serverlistHandler struct {
+type serveraliveHandler struct {
 	session   *session.Session
 	server    *server.Server
 	formatter stringformat.Formatter
-	notify    chan Notification
-}
-
-type Notification struct {
-	event   *gateway.InteractionCreateEvent
-	options map[string]discord.CommandInteractionOption
 }
 
 // CreateCommand creates a SlashCommand which handles /serveralive
 func CreateCommand(srv *server.Server) (cmd command.SlashCommand, err error) {
-	sh := serverlistHandler{session: srv.Session, server: srv, formatter: stringformat.New(srv.Mapnames, srv.Gametypes), notify: make(chan Notification)}
+	sh := serveraliveHandler{session: srv.Session, server: srv, formatter: stringformat.New(srv.Mapnames, srv.Gametypes)}
 
 	cmd = command.SlashCommand{
 		HandleInteraction: sh.handleInteraction,
@@ -49,37 +43,36 @@ func CreateCommand(srv *server.Server) (cmd command.SlashCommand, err error) {
 		},
 	}
 
-	go sh.sendMessage()
 	return
 }
 
-func (sh *serverlistHandler) sendMessage() {
-	for {
-		select {
-		case n := <-sh.notify:
-			var servers []server.GameServer
-			for _, v := range sh.server.GameServers {
-				servers = append(servers, v...)
-			}
+func (sh *serveraliveHandler) sendMessage(event *gateway.InteractionCreateEvent, options map[string]discord.CommandInteractionOption) {
+	var servers []server.GameServer
+	for _, v := range sh.server.GameServers {
+		servers = append(servers, v...)
+	}
 
-			if val, present := n.options["filter"]; present {
-				servers = filter(servers, val.String())
-			}
+	if val, present := options["filter"]; present {
+		servers = filter(servers, val.String())
+	}
 
-			desc := sh.formatter.DesktopList(servers)
-			if val, present := n.options["mobile"]; present {
-				mobile, err := val.BoolValue()
-				if err != nil {
-					mobile = false
-				}
-				if mobile {
-					desc = sh.formatter.MobileList(servers)
-				}
-			}
-			for _, m := range desc {
-				sh.session.SendMessage(n.event.ChannelID, m)
-			}
+	if len(servers) == 0 {
+		sh.session.SendMessage(event.ChannelID, "no servers found for the specified filter.")
+		return
+	}
+
+	desc := sh.formatter.DesktopList(servers)
+	if val, present := options["mobile"]; present {
+		mobile, err := val.BoolValue()
+		if err != nil {
+			mobile = false
 		}
+		if mobile {
+			desc = sh.formatter.MobileList(servers)
+		}
+	}
+	for _, m := range desc {
+		sh.session.SendMessage(event.ChannelID, m)
 	}
 }
 
@@ -95,12 +88,13 @@ func filter(list []server.GameServer, filterString string) []server.GameServer {
 	return ret
 }
 
-func (sh *serverlistHandler) handleInteraction(
+func (sh *serveraliveHandler) handleInteraction(
 	event *gateway.InteractionCreateEvent, options map[string]discord.CommandInteractionOption,
 ) (
 	response *api.InteractionResponseData, err error,
 ) {
-	sh.notify <- Notification{event, options}
+	go sh.sendMessage(event, options)
+
 	response = &api.InteractionResponseData{
 		Content: option.NewNullableString("sending filtered server list, please wait..."),
 	}

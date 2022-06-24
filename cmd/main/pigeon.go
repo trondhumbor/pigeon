@@ -12,6 +12,7 @@ import (
 	"github.com/diamondburned/arikawa/v3/session"
 	"github.com/trondhumbor/pigeon/internal/command/serveralive"
 	"github.com/trondhumbor/pigeon/internal/command/serverlist"
+	"github.com/trondhumbor/pigeon/internal/command/stats"
 	"github.com/trondhumbor/pigeon/internal/server"
 )
 
@@ -19,6 +20,7 @@ import (
 var CommandCreators = []server.CreateCommand{
 	serveralive.CreateCommand,
 	serverlist.CreateCommand,
+	stats.CreateCommand,
 }
 
 func main() {

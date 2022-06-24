@@ -101,8 +101,6 @@ func sendMessage(address string, message string, expectEot bool) ([]byte, error)
 			response = append(response, tmp...)
 		}
 	}
-	if err != nil {
-		return nil, err
-	}
+
 	return response, nil
 }

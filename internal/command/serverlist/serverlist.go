@@ -15,17 +15,11 @@ type serverlistHandler struct {
 	session   *session.Session
 	server    *server.Server
 	formatter stringformat.Formatter
-	notify    chan Notification
-}
-
-type Notification struct {
-	event   *gateway.InteractionCreateEvent
-	options map[string]discord.CommandInteractionOption
 }
 
 // CreateCommand creates a SlashCommand which handles /serverlist
 func CreateCommand(srv *server.Server) (cmd command.SlashCommand, err error) {
-	sh := serverlistHandler{session: srv.Session, server: srv, formatter: stringformat.New(srv.Mapnames, srv.Gametypes), notify: make(chan Notification)}
+	sh := serverlistHandler{session: srv.Session, server: srv, formatter: stringformat.New(srv.Mapnames, srv.Gametypes)}
 
 	cmd = command.SlashCommand{
 		HandleInteraction: sh.handleInteraction,
@@ -54,32 +48,26 @@ func CreateCommand(srv *server.Server) (cmd command.SlashCommand, err error) {
 		},
 	}
 
-	go sh.sendMessage()
 	return
 }
 
-func (sh *serverlistHandler) sendMessage() {
-	for {
-		select {
-		case n := <-sh.notify:
-			if servers, present := sh.server.GameServers[n.options["game"].String()]; present {
-				desc := sh.formatter.DesktopList(servers)
-				if val, present := n.options["mobile"]; present {
-					mobile, err := val.BoolValue()
-					if err != nil {
-						mobile = false
-					}
-					if mobile {
-						desc = sh.formatter.MobileList(servers)
-					}
-				}
-				for _, m := range desc {
-					sh.session.SendMessage(n.event.ChannelID, m)
-				}
-			} else {
-				sh.session.SendMessage(n.event.ChannelID, "couldn't find specified game in cache")
+func (sh *serverlistHandler) sendMessage(event *gateway.InteractionCreateEvent, options map[string]discord.CommandInteractionOption) {
+	if servers, present := sh.server.GameServers[options["game"].String()]; present {
+		desc := sh.formatter.DesktopList(servers)
+		if val, present := options["mobile"]; present {
+			mobile, err := val.BoolValue()
+			if err != nil {
+				mobile = false
+			}
+			if mobile {
+				desc = sh.formatter.MobileList(servers)
 			}
 		}
+		for _, m := range desc {
+			sh.session.SendMessage(event.ChannelID, m)
+		}
+	} else {
+		sh.session.SendMessage(event.ChannelID, "couldn't find specified game in cache")
 	}
 }
 
@@ -88,7 +76,8 @@ func (sh *serverlistHandler) handleInteraction(
 ) (
 	response *api.InteractionResponseData, err error,
 ) {
-	sh.notify <- Notification{event, options}
+	go sh.sendMessage(event, options)
+
 	response = &api.InteractionResponseData{
 		Content: option.NewNullableString("sending server list, please wait..."),
 	}
