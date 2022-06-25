@@ -21,10 +21,13 @@ func leftjust(s string, n int) string {
 
 func sanitizeFields(inServer server.GameServer) server.GameServer {
 	sanitized := make(server.GameServer)
-	re := regexp.MustCompile(`(?i)^https?:\/\/`) // remove links that discord tries to parse
+	reLinks := regexp.MustCompile(`(?i)^https?:\/\/`) // remove links that discord tries to parse
+	reInvites := regexp.MustCompile(`(?i)discord.gg`) // remove server invites that discord tries to parse
 	for k, v := range inServer {
-		sanitized[k] = strings.ReplaceAll(v, "`", "")
-		sanitized[k] = re.ReplaceAllString(v, "hxxp://")
+		v = strings.ReplaceAll(v, "`", "")
+		v = reLinks.ReplaceAllString(v, "hxxp://")
+		v = reInvites.ReplaceAllString(v, "discord gg")
+		sanitized[k] = v
 	}
 	return sanitized
 }
