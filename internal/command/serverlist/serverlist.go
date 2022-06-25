@@ -21,6 +21,12 @@ type serverlistHandler struct {
 func CreateCommand(srv *server.Server) (cmd command.SlashCommand, err error) {
 	sh := serverlistHandler{session: srv.Session, server: srv, formatter: stringformat.New(srv.Mapnames, srv.Gametypes)}
 
+	choices := []discord.StringChoice{}
+	for _, master := range srv.MasterServers {
+		gameId := master.GameId
+		choices = append(choices, discord.StringChoice{Name: gameId, Value: gameId})
+	}
+
 	cmd = command.SlashCommand{
 		HandleInteraction: sh.handleInteraction,
 		CommandData: api.CreateCommandData{
@@ -31,13 +37,7 @@ func CreateCommand(srv *server.Server) (cmd command.SlashCommand, err error) {
 					OptionName:  "game",
 					Description: "which game to show servers for",
 					Required:    true,
-					Choices: []discord.StringChoice{
-						// StringChoice value must match MasterServer.gameId
-						{Name: "h1", Value: "H1"},
-						{Name: "iw4x", Value: "IW4"},
-						{Name: "iw6x", Value: "IW6"},
-						{Name: "s1x", Value: "S1"},
-					},
+					Choices:     choices,
 				},
 				&discord.BooleanOption{
 					OptionName:  "mobile",
