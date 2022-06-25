@@ -53,6 +53,11 @@ func CreateCommand(srv *server.Server) (cmd command.SlashCommand, err error) {
 
 func (sh *serverlistHandler) sendMessage(event *gateway.InteractionCreateEvent, options map[string]discord.CommandInteractionOption) {
 	if servers, present := sh.server.GameServers[options["game"].String()]; present {
+		if len(servers) == 0 {
+			sh.session.SendMessage(event.ChannelID, "no servers found for the specified game.")
+			return
+		}
+
 		desc := sh.formatter.DesktopList(servers)
 		if val, present := options["mobile"]; present {
 			mobile, err := val.BoolValue()

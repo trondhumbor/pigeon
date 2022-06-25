@@ -87,10 +87,10 @@ func (f *Formatter) MobileList(servers []server.GameServer) []string {
 		}
 
 		s = sanitizeFields(s)
-		hostname := fmt.Sprintf("|%s|%s|", leftjust("Hostname", 8), leftjust(s["hostname"], 22))
-		mapname := fmt.Sprintf("|%s|%s|", leftjust("Map", 8), leftjust(f.MapnameLookup(s["mapname"]), 22))
-		gametype := fmt.Sprintf("|%s|%s|", leftjust("Gametype", 8), leftjust(f.GametypeLookup(s["gametype"]), 22))
-		clients := fmt.Sprintf("|%s|%s|", leftjust("Clients", 8), leftjust(fmt.Sprintf("%s / %s (%s)", s["clients"], s["sv_maxclients"], s["bots"]), 22))
+		hostname := fmt.Sprintf("|%-8s|%s|", "Hostname", leftjust(s["hostname"], 22))
+		mapname := fmt.Sprintf("|%-8s|%s|", "Map", leftjust(f.MapnameLookup(s["mapname"]), 22))
+		gametype := fmt.Sprintf("|%-8s|%s|", "Gametype", leftjust(f.GametypeLookup(s["gametype"]), 22))
+		clients := fmt.Sprintf("|%-8s|%s|", "Clients", leftjust(fmt.Sprintf("%s / %s (%s)", s["clients"], s["sv_maxclients"], s["bots"]), 22))
 		desc += fmt.Sprintf("%s\n%s\n%s\n%s\n", hostname, mapname, gametype, clients)
 		desc += "---------------------------------\n"
 	}
@@ -100,14 +100,14 @@ func (f *Formatter) MobileList(servers []server.GameServer) []string {
 }
 
 func (f *Formatter) Stats(totalservers, totalclients, totalbots int) string {
-	desc := "```\n---------------------\n"
+	desc := "```\n----------------------\n"
 
-	servers := fmt.Sprintf("|%s|%s|", leftjust("Servers", 8), leftjust(fmt.Sprintf("%d", totalservers), 10))
-	clients := fmt.Sprintf("|%s|%s|", leftjust("Clients", 8), leftjust(fmt.Sprintf("%d", totalclients), 10))
-	bots := fmt.Sprintf("|%s|%s|", leftjust("Bots", 8), leftjust(fmt.Sprintf("%d", totalbots), 10))
+	servers := fmt.Sprintf("| %-8s | %-7d |", "Servers", totalservers)
+	clients := fmt.Sprintf("| %-8s | %-7d |", "Clients", totalclients)
+	bots := fmt.Sprintf("| %-8s | %-7d |", "Bots", totalbots)
 
 	desc += fmt.Sprintf("%s\n%s\n%s\n", servers, clients, bots)
-	desc += "---------------------\n"
+	desc += "----------------------\n"
 	desc += "```"
 	return desc
 }
