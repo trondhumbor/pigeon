@@ -67,8 +67,8 @@ func (f *Formatter) DesktopList(servers []server.GameServer) []string {
 		}
 
 		s = sanitizeFields(s)
-		hostname := leftjust(s["hostname"], 36)
-		mapname := leftjust(f.MapnameLookup(s["mapname"]), 16)
+		hostname := leftjust(s["hostname"], 40)
+		mapname := leftjust(f.MapnameLookup(s["mapname"]), 12)
 		gametype := leftjust(f.GametypeLookup(s["gametype"]), 7)
 		clients := leftjust(fmt.Sprintf("%s / %s (%s)", s["clients"], s["sv_maxclients"], s["bots"]), 12)
 		desc += fmt.Sprintf("| %s | %s | %s | %s |\n", hostname, mapname, gametype, clients)

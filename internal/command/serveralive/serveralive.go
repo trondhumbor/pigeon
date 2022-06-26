@@ -1,6 +1,7 @@
 package serveralive
 
 import (
+	"log"
 	"strings"
 
 	"github.com/diamondburned/arikawa/v3/api"
@@ -57,7 +58,10 @@ func (sh *serveraliveHandler) sendMessage(event *gateway.InteractionCreateEvent,
 	}
 
 	if len(servers) == 0 {
-		sh.session.SendMessage(event.ChannelID, "no servers found for the specified filter.")
+		_, mErr := sh.session.SendMessage(event.ChannelID, "no servers found for the specified filter.")
+		if mErr != nil {
+			log.Printf("error occured sending message")
+		}
 		return
 	}
 
@@ -72,7 +76,10 @@ func (sh *serveraliveHandler) sendMessage(event *gateway.InteractionCreateEvent,
 		}
 	}
 	for _, m := range desc {
-		sh.session.SendMessage(event.ChannelID, m)
+		_, mErr := sh.session.SendMessage(event.ChannelID, m)
+		if mErr != nil {
+			log.Printf("error occured sending message")
+		}
 	}
 }
 

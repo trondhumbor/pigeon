@@ -1,6 +1,9 @@
 package serverlist
 
 import (
+	"log"
+	"strconv"
+
 	"github.com/diamondburned/arikawa/v3/api"
 	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/gateway"
@@ -44,6 +47,16 @@ func CreateCommand(srv *server.Server) (cmd command.SlashCommand, err error) {
 					Description: "format serverlist for mobile devices",
 					Required:    false,
 				},
+				&discord.BooleanOption{
+					OptionName:  "full",
+					Description: "show full servers",
+					Required:    false,
+				},
+				&discord.BooleanOption{
+					OptionName:  "empty",
+					Description: "show empty servers",
+					Required:    false,
+				},
 			},
 		},
 	}
@@ -54,9 +67,14 @@ func CreateCommand(srv *server.Server) (cmd command.SlashCommand, err error) {
 func (sh *serverlistHandler) sendMessage(event *gateway.InteractionCreateEvent, options map[string]discord.CommandInteractionOption) {
 	if servers, present := sh.server.GameServers[options["game"].String()]; present {
 		if len(servers) == 0 {
-			sh.session.SendMessage(event.ChannelID, "no servers found for the specified game.")
+			_, mErr := sh.session.SendMessage(event.ChannelID, "no servers found for the specified game.")
+			if mErr != nil {
+				log.Printf("error occured sending message")
+			}
 			return
 		}
+
+		servers := filter(servers, options)
 
 		desc := sh.formatter.DesktopList(servers)
 		if val, present := options["mobile"]; present {
@@ -69,11 +87,65 @@ func (sh *serverlistHandler) sendMessage(event *gateway.InteractionCreateEvent, 
 			}
 		}
 		for _, m := range desc {
-			sh.session.SendMessage(event.ChannelID, m)
+			_, mErr := sh.session.SendMessage(event.ChannelID, m)
+			if mErr != nil {
+				log.Printf("error occured sending message")
+			}
 		}
 	} else {
-		sh.session.SendMessage(event.ChannelID, "couldn't find specified game in cache")
+		_, mErr := sh.session.SendMessage(event.ChannelID, "couldn't find specified game in cache")
+		if mErr != nil {
+			log.Printf("error occured sending message")
+		}
 	}
+}
+
+func filter(list []server.GameServer, options map[string]discord.CommandInteractionOption) []server.GameServer {
+	full := true
+	empty := true
+	var err error
+
+	if val, present := options["full"]; present {
+		full, err = val.BoolValue()
+		if err != nil {
+			full = true
+		}
+	}
+
+	if val, present := options["empty"]; present {
+		empty, err = val.BoolValue()
+		if err != nil {
+			empty = true
+		}
+	}
+
+	var ret []server.GameServer
+
+	for _, s := range list {
+		c, cerr := strconv.Atoi(s["clients"])
+		b, berr := strconv.Atoi(s["bots"])
+		m, merr := strconv.Atoi(s["sv_maxclients"])
+		if cerr != nil || berr != nil || merr != nil {
+			continue
+		}
+
+		// basic sanity checks
+		if b > c || (c > 18 || c < 0) || (b > 18 || b < 0) || (m > 18 || m < 0) {
+			continue
+		}
+
+		if !full && c == m {
+			continue
+		}
+
+		if !empty && c == 0 {
+			continue
+		}
+
+		ret = append(ret, s)
+	}
+
+	return ret
 }
 
 func (sh *serverlistHandler) handleInteraction(
